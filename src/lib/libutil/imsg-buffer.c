@@ -29,6 +29,10 @@
 
 #include "imsg.h"
 
+#ifndef __OpenBSD__
+#include "compat.h"
+#endif
+
 static int	ibuf_realloc(struct ibuf *, size_t);
 static void	ibuf_enqueue(struct msgbuf *, struct ibuf *);
 static void	ibuf_dequeue(struct msgbuf *, struct ibuf *);
@@ -182,7 +186,11 @@ ibuf_free(struct ibuf *buf)
 {
 	if (buf == NULL)
 		return;
+#ifdef __OpenBSD__
 	freezero(buf->buf, buf->size);
+#else
+	free(buf->buf);
+#endif
 	free(buf);
 }
 

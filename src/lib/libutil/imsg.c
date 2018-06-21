@@ -28,6 +28,11 @@
 
 #include "imsg.h"
 
+#ifndef __OpenBSD__
+#include "getdtablecount.h"
+#include "compat.h"
+#endif
+
 int	 imsg_fd_overhead = 0;
 
 static int	 imsg_get_fd(struct imsgbuf *);
@@ -263,7 +268,11 @@ imsg_close(struct imsgbuf *ibuf, struct ibuf *msg)
 void
 imsg_free(struct imsg *imsg)
 {
+#ifdef __OpenBSD__
 	freezero(imsg->data, imsg->hdr.len - IMSG_HEADER_SIZE);
+#else
+	free(imsg->data);
+#endif
 }
 
 static int
