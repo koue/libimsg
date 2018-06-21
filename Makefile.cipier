@@ -1,0 +1,21 @@
+# $FreeBSD$
+
+PORTNAME=	libimsg
+PORTVERSION=	6.3.20180621
+CATEGORIES=	devel
+
+MAINTAINER=	koue@chaosophia.net
+COMMENT=	OpenBSD imsg framework
+
+LICENSE=	BSD2CLAUSE
+
+USE_GITHUB=	yes
+GH_ACCOUNT=	koue
+GH_PROJECT=	libimsg
+
+MAKE_ARGS+=	BINDIR=${PREFIX}/sbin MANDIR=${PREFIX}/man/man
+
+PLIST_FILES=	include/imsg.h \
+		lib/liblibimsg.a
+
+.include <bsd.port.mk>
