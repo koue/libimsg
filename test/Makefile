@@ -13,5 +13,7 @@ all: imsg_test
 imsg_test: imsg_test.c $(IMSG_DEP)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o imsg_test imsg_test.c $(LDADD)
 
+install:
+
 clean:
 	rm -f *_test *.core
