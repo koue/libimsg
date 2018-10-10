@@ -1,19 +1,18 @@
 #
-CC=		cc -Wall -Wstrict-prototypes -g -O0 -I.
+PROG=		imsg_test
 
-CFLAGS+=	-I../src/lib/libutil
-LDFLAGS+=
-LDADD=		../src/lib/libutil/libimsg.a
+CFLAGS=		-Wall \
+		-I../src/lib/libutil
+LDFLAGS=	-L../src/lib/libutil
+LDADD=		-limsg
 
-IMSG_DEP=	../src/lib/libutil/imsg.h \
-		../src/lib/libutil/libimsg.a
-
-all: imsg_test
-
-imsg_test: imsg_test.c $(IMSG_DEP)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o imsg_test imsg_test.c $(LDADD)
+MAN=
+MK_DEBUG_FILES=	no
+MAKEOBJDIR= .
 
 install:
 
-clean:
-	rm -f *_test *.core
+test:
+	./${PROG}
+
+.include <bsd.prog.mk>
