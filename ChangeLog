@@ -1,0 +1,271 @@
+2018-09-26 09:22  jmc
+
+	* lib/libutil/imsg_init.3: explicitly mention local processes; from
+	  geoff hill ok nicm
+
+2018-02-16 07:42  nicm
+
+	* lib/libutil/imsg_init.3: Fix function argument names, from Abel
+	  Abraham Camarillo Ojeda via jmc@.
+
+2017-12-14 09:27  kettenis
+
+	* lib/libutil/: imsg-buffer.c, imsg.c: Make a few internal symbols
+	  static and add a Symbols.map version script to control which
+	  symbols are exported from the shared library.
+
+	  ok guenther@, deraadt@, jca@
+
+2017-12-06 12:07  zhuk
+
+	* lib/libutil/imsg_init.3: It's the imsg_compose(3) who accepts
+	  'fd' argument, not imsg_create(3).
+
+2017-05-03 15:49  reyk
+
+	* lib/libutil/imsg_init.3: spacing (in EXAMPLES code)
+
+2017-04-11 09:57  reyk
+
+	* lib/libutil/: imsg-buffer.c, imsg.c: Use freezero(3) for the imsg
+	  framework in imsg_free(3) and ibuf_free(3).
+
+	  In our privsep model, imsg is often used to transport sensitive
+	  information between processes.  But a process might free an imsg,
+	  and reuse the memory for a different thing.  iked uses some
+	  explicit_bzero() to clean imsg-buffer but doing it in the library
+	  with the freezero() is less error-prone and also benefits other
+	  daemons.
+
+	  OK deraadt@ jsing@ claudio@
+
+2017-03-24 09:34  nicm
+
+	* lib/libutil/: imsg.c, imsg.h, imsg_init.3: Use C99 types
+	  (uint32_t) instead of BSD (u_int32_t) - the former are more
+	  portable. Add stdint.h to the headers in imsg_init(3).
+
+	  No objections from millert@.
+
+2017-03-17 14:51  deraadt
+
+	* lib/libutil/imsg-buffer.c: Grow buffers using recallocarray, to
+	  avoid the potential dribble that the standard realloc*()
+	  functions can leave behind.  imsg buffers are sometimes used in
+	  protocol stacks which require some secrecy, and layering
+	  violations would be needed to resolve this issue otherwise.
+	  Discussed with many.
+
+2017-03-06 18:44  otto
+
+	* lib/libc/stdlib/recallocarray.c: Introducing recallocarray(3), a
+	  blend of calloc(3) and reallocarray(3) with the added feature
+	  that released memory is cleared. Much input from various
+	  developers. ok deraadt@ tom@
+
+2016-10-15 12:33  jmc
+
+	* lib/libutil/imsg_init.3: zap trailing whitespace;
+
+2016-10-10 17:15  reyk
+
+	* lib/libutil/imsg_init.3: Fixup the example for msgbuf_write() and
+	  imsg_read() to check the error cases for -1 and 0 explicitly (it
+	  initially only checked for -1, I updated it to also check for 0,
+	  and rzalamena@ figured out that 0 has to be checked in a
+	  differently).
+
+	  OK millert@ rzalamena@
+
+2015-12-29 18:05  benno
+
+	* lib/libutil/imsg_init.3: mention that ibuf_free() does not need a
+	  NULL check.
+
+2015-12-29 18:05  benno
+
+	* lib/libutil/imsg-buffer.c: check for NULL in ibuf_free().  ok and
+	  slight improvement, mmcco@ ok semarie@ and encouragement tedu@
+	  krw@
+
+2015-12-09 11:54  tb
+
+	* lib/libutil/imsg.c: Add a cast to silence a compiler warning by
+	  clang on FreeBSD.  From Craig Rodrigues.  ok tedu@
+
+2015-12-05 13:06  claudio
+
+	* lib/libutil/: imsg.c, imsg_init.3: Do not loop on EAGAIN in
+	  imsg_read(). Better to return the error to the caller and let him
+	  do another poll loop. This fixes spinning relayd processes seen
+	  on busy TLS relays. OK benno@ henning@
+
+2015-11-27 01:57  mmcc
+
+	* lib/libutil/imsg.c: Remove three NULL-checks before free().	ok
+	  millert@
+
+2015-07-19 07:18  nicm
+
+	* lib/libutil/imsg.c: Handle malloc(0) returning NULL (which can
+	  happen on some other platforms) by explicitly making imsg->data =
+	  NULL when there is no data. ok deraadt
+
+2015-07-12 18:40  nicm
+
+	* lib/libutil/: imsg-buffer.c, imsg.c: Use memset instead of bzero
+	  for better portability.
+
+	  ok gilles claudio doug
+
+2015-07-11 16:23  deraadt
+
+	* lib/libutil/imsg_init.3: typo in embedded code block; from Ben
+	  Cornett
+
+2015-07-03 14:50  brynet
+
+	* lib/libutil/: imsg-buffer.c, imsg.c: bzero cmsgbuf before using
+	  it, silences valgrind warnings.
+
+	  henning@ "sure"
+
+2015-06-11 19:25  reyk
+
+	* lib/libutil/: imsg.c, imsg_init.3: The correct semantic is to
+	  check msgbuf_write() for <= 0, not just < 0.	Fix one occurence
+	  in imsg_flush() and clarify it the man page.
+
+	  Discussed with at least blambert@ jsg@ yasuoka@.
+
+	  OK gilles@
+
+2014-12-25 22:20  benno
+
+	* lib/libutil/imsg-buffer.c: return ERANGE instead of ENOMEM, so
+	  callers can differentiate real oom from this case where we have a
+	  static buffer and cant realloc.
+
+	  ok phessler, claudio, reyk
+
+2014-06-30 00:26  deraadt
+
+	* lib/libutil/imsg.c: sys/types.h rather than sys/param.h, where
+	  applicable.  avoid overreach.
+
+2014-06-30 00:25  deraadt
+
+	* lib/libutil/imsg-buffer.c: limits.h rather than sys/param.h
+
+2013-12-26 17:32  eric
+
+	* lib/libutil/: imsg.c, imsg.h, imsg_init.3: constify data
+	  parameter in imsg_add() and imsg_compose()
+
+	  ok deraadt@
+
+2013-11-13 21:04  benno
+
+	* lib/libutil/imsg_init.3: document that ibuf_write() and
+	  msgbuf_write() can now return EAGAIN from and with deraadt@
+
+2013-11-13 20:40  benno
+
+	* lib/libutil/imsg-buffer.c: original bug diagnosed by sthen:
+	  automatic retry in msgbuf_write on EAGAIN causes spinning.
+
+	  fix from claudio: "Let msgbuf_write return -1 with errno EAGAIN.
+	  The users then must check if this was the case and readd the
+	  event or poll again.	The current handling in the imsg code is
+	  wrong for sure."
+
+	  ok gilles
+
+2013-06-05 03:40  tedu
+
+	* lib/libutil/imsg_init.3: use fancy .In macro for includes. from
+	  Jan Klemkow. ok jmc schwarze
+
+2013-02-01 15:22  gilles
+
+	* lib/libutil/imsg.c: fix memleak in imsg_read() when hitting the
+	  fd reserve check
+
+	  ok millert@, mikeb@, lteo@
+
+2012-12-19 13:37  reyk
+
+	* lib/libutil/imsg.c: Fix a purely theoretical NULL-pointer
+	  dereference in the case that we would be able to receive multiple
+	  SCM_RIGHTS messages.
+
+	  ok claudio@ gilles@
+
+2012-11-15 15:31  krw
+
+	* lib/libutil/imsg_init.3: imsg_get() returns ssize_t, not size_t.
+
+2012-10-22 07:15  jmc
+
+	* lib/libutil/imsg_init.3: struct buf -> ibuf; from Sunil
+	  Nimmagadda
+
+2012-06-15 23:44  jmatthew
+
+	* lib/libutil/imsg_init.3: update return values for ibuf_write and
+	  msgbuf_write
+
+	  ok gilles@
+
+2012-06-02 21:46  gilles
+
+	* lib/libutil/: imsg-buffer.c, imsg.c: in imsg_read() avoid calling
+	  recvmsg() if we detect that we will be short on descriptors, this
+	  can be achieved thanks to the new getdtablecount() system call.
+	  application may provide a reserve count to ensure that the
+	  recvmsg() call is not called when they don't have enough
+	  descriptors to work properly.
+
+	  change the API so that transient errors that can be retried
+	  immediately are retried within the function right away, whereas
+	  transient errors for which the application may want to take
+	  action will set errno to EAGAIN.
+
+	  ok deraadt@ and henning@
+
+2011-06-23 22:07  sthen
+
+	* lib/libutil/imsg_init.3: s/ands/and/, from Tobias Ulmer
+
+2011-03-05 15:05  claudio
+
+	* lib/libutil/imsg_init.3: Correct msgbuf_write() example. OK jmc@
+	  and nicm@
+
+2010-10-31 17:33  nicm
+
+	* lib/libutil/imsg_init.3: imsg.h requires sys/uio.h, ok deraadt
+
+2010-06-23 07:53  nicm
+
+	* lib/libutil/imsg.h: Protect against multiple inclusion, from
+	  Christiano F. Haesbaert.
+
+	  ok deraadt@
+
+2010-05-28 01:04  sthen
+
+	* lib/libutil/imsg_init.3: typo; Ian McWilliam
+
+2010-05-26 16:44  nicm
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h, imsg_init.3: Move
+	  imsg into libutil and add a man page.
+
+	  Minor bump for libutil.
+
+	  Previous versions of this diff and man page looked at by various
+	  people.
+
+	  "you should just commit" deraadt
+
