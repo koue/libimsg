@@ -1,3 +1,10 @@
+2019-01-20 02:50  bcook
+
+	* lib/libutil/: imsg-buffer.c, imsg.h, imsg_init.3: Change imsg
+	  header definitions to use standard types.
+
+	  ok deraadt@ claudio@
+
 2018-09-26 09:22  jmc
 
 	* lib/libutil/imsg_init.3: explicitly mention local processes; from
