@@ -1,7 +1,5 @@
-# $FreeBSD$
-
 PORTNAME=	libimsg
-PORTVERSION=	6.3.20180621
+PORTVERSION=	6.9.20210510
 CATEGORIES=	devel
 
 MAINTAINER=	koue@chaosophia.net
