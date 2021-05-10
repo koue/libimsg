@@ -1,3 +1,28 @@
+2021-03-31 17:42  eric
+
+	* lib/libutil/imsg-buffer.c: change the barrier so that fd's are
+	  always passed and received with the first byte of the imsg they
+	  belong to.
+
+	  idea, tweaks and ok claudio@
+
+2021-03-18 11:16  claudio
+
+	* lib/libc/stdlib/recallocarray.c: Type-cast getpagesize() from int
+	  to size_t for the comparison with d.	getpagesize() will only
+	  return positive numbers (there is no negative page size system)
+	  and it can not fail.	Should fix some compiler warnings seen in
+	  -portable projects.  OK otto@
+
+2021-01-13 09:56  claudio
+
+	* lib/libutil/imsg.h: Make imsg.h a bit more self-contained by
+	  prototyping struct iovec.  OK martijn@ mvs@ deraadt@
+
+2020-12-15 13:40  jmc
+
+	* lib/libutil/imsg_init.3: typo fix from aisha tammy; ok nicm
+
 2019-01-20 02:50  bcook
 
 	* lib/libutil/: imsg-buffer.c, imsg.h, imsg_init.3: Change imsg
