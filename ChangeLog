@@ -1,3 +1,29 @@
+2022-05-19 08:05  stsp
+
+	* lib/libutil/imsg_init.3: Document that imsg_add(3) frees its msg
+	  argument on failure.
+
+	  ok op@ claudio@
+
+2022-04-23 08:57  tobias
+
+	* lib/libutil/imsg-buffer.c: Verify sizes before arithmetic
+	  operations
+
+	  Unsigned overflows are not a bug in C but we have to make sure
+	  that requested buffer sizes will be actually available.
+
+	  If not, set errno to ERANGE and return an error value.
+
+	  ok deraadt, millert
+
+2022-01-28 10:41  claudio
+
+	* lib/libutil/imsg.c: Only memcpy() into imsg->data if datalen is
+	  not 0. Passing a NULL pointer to memcpy() is UB no matter if len
+	  is 0.  Reported by fouzhe on openbgpd-portable github page.  OK
+	  tb@
+
 2021-03-31 17:42  eric
 
 	* lib/libutil/imsg-buffer.c: change the barrier so that fd's are
