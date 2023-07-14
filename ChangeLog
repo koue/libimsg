@@ -1,3 +1,58 @@
+2023-06-20 06:53  jsg
+
+	* lib/libutil/imsg_init.3: responsibilty -> responsibility
+
+2023-06-20 05:56  jmc
+
+	* lib/libutil/imsg_init.3: - filedescriptor -> file descriptor, as
+	  per the rest of the page - missing full stop
+
+2023-06-19 17:19  claudio
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h, imsg_init.3: Improve
+	  the ibuf API by adding these functions: Functions extending
+	  ibuf_add to work with more specific data types   ibuf_add_buf,
+	  ibuf_add_zero, ibuf_add_n8, ibuf_add_n16, ibuf_add_n32,
+	  ibuf_add_n64 Functions replacing ibuf_seek where data at a
+	  specific offset is modified	ibuf_set, ibuf_set_n8,
+	  ibuf_set_n16, ibuf_set_n32, ibuf_set_n64 Functions to check, get
+	  and set the filedescriptor stored on the ibuf   ibuf_fd_avail,
+	  ibuf_fd_get, ibuf_fd_set and ibuf_data() to access the data
+	  buffer, to be used together with ibuf_size()
+
+	  On top of this add an optimized imsg_compose_ibuf() where an ibuf
+	  is wrapped into an imsg in an efficent way.
+
+	  Finally remove msgbuf_drain since it is not used by anything
+	  outside of the ibuf code. Because of this removal bump the major
+	  of libutil.
+
+	  Remove ibuf_data() in iked since the same function is now
+	  provided by libutil.	OK tb@
+
+2023-05-23 12:41  claudio
+
+	* lib/libutil/imsg-buffer.c: Avoid calling malloc with a zero
+	  length argument.
+
+	  ibuf_open() will return an error in this case while
+	  ibuf_dynamic() accepts a 0 len argument and just initialized the
+	  buffer and length to zero.  A later ibuf_realloc() call will take
+	  care of allocating the buffer.
+
+	  Additionally switch from malloc() to calloc() when allocating the
+	  buffer this way the buffer is initalized and in ibuf_reserve() an
+	  addtional memset() is used to make sure that the reserved data is
+	  zeroed.
+
+	  OK tb@
+
+2023-03-08 04:43  guenther
+
+	* lib/libutil/imsg.c: Delete obsolete /* ARGSUSED */ lint comments.
+
+	  ok miod@ millert@
+
 2022-05-19 08:05  stsp
 
 	* lib/libutil/imsg_init.3: Document that imsg_add(3) frees its msg
