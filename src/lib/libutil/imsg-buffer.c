@@ -23,7 +23,11 @@
 
 #include <limits.h>
 #include <errno.h>
+#ifdef __OpenBSD__
 #include <endian.h>
+#else
+#include <sys/endian.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -302,7 +306,11 @@ ibuf_free(struct ibuf *buf)
 	if (buf->fd != -1)
 		close(buf->fd);
 #endif
+#ifdef __OpenBSD__
 	freezero(buf->buf, buf->size);
+#else
+	free(buf->buf);
+#endif
 	free(buf);
 }
 
