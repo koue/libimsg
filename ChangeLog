@@ -1,3 +1,87 @@
+2023-12-29 11:48  claudio
+
+	* lib/libutil/imsg_init.3: Cleanup required headers form imsg.h.
+
+	  Right now only sys/queue.h is required to be included for imsg.h.
+	  The only exception is if imsg_composev() is used, then sys/uio.h
+	  is needed to access struct iovec.  OK tb@
+
+2023-12-13 00:37  jsg
+
+	* lib/libutil/imsg_init.3: filedescriptor -> file descriptor
+
+2023-12-12 15:49  claudio
+
+	* lib/libutil/imsg_init.3: Move ibuf API from imsg_init.3 to
+	  ibuf_add.3
+
+	  Document all new functions added and adjust examples in
+	  imsg_init.3 to follow the new way of handling messages.  OK tb@
+
+2023-12-12 15:47  claudio
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h: Extend imsg and ibuf
+	  API with useful getter methods
+
+	  For ibufs: - various getters for ibufs (ibuf_get* and ibuf_skip)
+	  - additional ibuf set/add functions that don't alter byte order -
+	  ibuf_truncate and ibuf_rewind - ibuf_from_buffer and
+	  ibuf_from_ibuf to populate a reader ibuf - a getter for the
+	  msgbuf queuelen
+
+	  For imsg: - various getters for imsg (especially imsg_get_data()
+	  which can be used   in most cases as a simple one call api with
+	  all error checks).	All the imsg.hdr fields can also be
+	  accessed by getters.	- The imsg data is now actually an ibuf but
+	  the old imsg.data pointer is	 kept for now to not break every
+	  imsg application.  - Introduce imsg_forward to simply forward a
+	  message from one channel to	an other (used in the control
+	  socket code).
+
+	  Since this requires a major bump take the oportunity to also
+	  cleanup some function signatures to use size_t for length fields.
+	  Also internal data structures are removed from the public header.
+
+	  With and OK tb@
+
+2023-11-18 07:14  claudio
+
+	* lib/libutil/imsg.c: Rename internal function imsg_get_fd() to
+	  imsg_dequeue_fd().  OK tb@
+
+2023-11-17 15:35  claudio
+
+	* lib/libutil/imsg.c: The term peerid originated from bgpd. It is
+	  time to generalize this and just call it id. This only targets
+	  the function arguments but not the struct imsg_hdr field since
+	  that is a major API break.  OK tb@
+
+2023-11-17 13:43  claudio
+
+	* lib/libutil/imsg.c: rename struct imsgbuf *ibuf to *imsgbuf since
+	  ibuf is too close to struct ibuf and just causes confusion for
+	  little gain.
+
+	  OK tb@ stsp@
+
+2023-10-24 14:05  claudio
+
+	* lib/libutil/imsg-buffer.c: Require callers to use ibuf_fd_get()
+	  to extract the passed fd from an ibuf.
+
+	  In imsg_free() close any fd that was not claimed automatically to
+	  prevent filedescriptor leaks. In ibuf_dequeue() remvoe code which
+	  is now part of imsg_free().  OK tb@
+
+2023-09-28 17:00  schwarze
+
+	* lib/libutil/imsg_init.3: add a missing .Fa macro
+
+2023-09-28 16:41  schwarze
+
+	* lib/libutil/imsg_init.3: fix two wrong function names in the
+	  description; from <Lucas at sexy dot is>
+
 2023-06-20 06:53  jsg
 
 	* lib/libutil/imsg_init.3: responsibilty -> responsibility
