@@ -1,3 +1,11 @@
+2023-12-29 11:48  claudio
+
+	* lib/libutil/imsg_init.3: Cleanup required headers form imsg.h.
+
+	  Right now only sys/queue.h is required to be included for imsg.h.
+	  The only exception is if imsg_composev() is used, then sys/uio.h
+	  is needed to access struct iovec.  OK tb@
+
 2023-12-13 00:37  jsg
 
 	* lib/libutil/imsg_init.3: filedescriptor -> file descriptor
