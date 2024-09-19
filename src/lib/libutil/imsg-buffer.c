@@ -36,10 +36,6 @@
 
 #include "imsg.h"
 
-#ifndef __OpenBSD__
-#include "compat.h"
-#endif
-
 static int	ibuf_realloc(struct ibuf *, size_t);
 static void	ibuf_enqueue(struct msgbuf *, struct ibuf *);
 static void	ibuf_dequeue(struct msgbuf *, struct ibuf *);

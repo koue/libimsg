@@ -31,7 +31,6 @@
 
 #ifndef __OpenBSD__
 #include "getdtablecount.h"
-#include "compat.h"
 #endif
 struct imsg_fd {
 	TAILQ_ENTRY(imsg_fd)	entry;
