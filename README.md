@@ -14,9 +14,3 @@ http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/lib/libutil/
 ## Usage
 
 `cd test/ && make && make test`
-
-## Status
-
-master | develop
--------|--------
-[![Build Status](https://cipier.net/status/koue/libimsg/master)](https://cipier.net/status/koue/libimsg/master) | [![Build Status](https://cipier.net/status/koue/libimsg/develop)](https://cipier.net/status/koue/libimsg/develop)

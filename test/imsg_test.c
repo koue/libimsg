@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nikola Kolev <koue@chaosophia.net>
+ * Copyright (c) 2018-2025 Nikola Kolev <koue@chaosophia.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,58 +53,58 @@ enum imsg_type {
 };
 
 int
-parent(struct imsgbuf *ibuf)
+parent(struct imsgbuf *imsgbuf)
 {
 	struct imsg	imsg;
 	unsigned long   datalen;
 	int		idata, n = 0, msgnum = 0;
 	char		sdata[STRING_LENGTH];
 
-	for (; msgnum < MSGNUM; n = imsg_read(ibuf)) {
-		if (n == -1 && errno != EAGAIN) {
-			/* handle socket error */
-			printf("%s: imsg_read error\n", __func__);
-			exit(1);
+	for (;msgnum < MSGNUM;) {
+		switch (imsgbuf_read(imsgbuf)) {
+		case -1:
+			/* handle read error */
+			break;
+		case 0:
+			/* handle closed connection */
+			break;
 		}
-		for(;;) {
-			if ((n = imsg_get(ibuf, &imsg)) == -1) {
+
+		for (;;) {
+			if ((n = imsgbuf_get(imsgbuf, &imsg)) == -1) {
 				/* handle read error */
-				printf("%s: imsg_get error\n", __func__);
-				break;
+				printf("%s: imsgbuf_get error\n", __func__);
+				exit(1);
 			}
-			if (n == 0) {
+			if (n == 0)	/* no more messages */
 				break;
-			}
+
 			datalen = imsg.hdr.len - IMSG_HEADER_SIZE;
 
-			switch (imsg.hdr.type) {
+			switch (imsg_get_type(&imsg)) {
 			case IMSG_MSG_INT:
-				if (datalen < sizeof(idata)) {
+				if (imsg_get_data(&imsg, &idata, sizeof(idata)) == -1) {
 					/* handle corrupt message */
 					printf("%s: datalen error\n", __func__);
 					break;
 				}
+				/* handle message received */
 				memcpy(&idata, imsg.data, sizeof(idata));
-					/* handle message received */
-				printf("%s: received: %d, size %ld\n", __func__,
-								idata, datalen);
-				/* increase message number */
+				printf("%s: received: %d, size %ld\n", __func__, idata, datalen);
 				msgnum++;
 				break;
 			case IMSG_MSG_STRING:
-				if (datalen < sizeof(sdata)) {
+				if (imsg_get_data(&imsg, sdata, sizeof(sdata)) == -1) {
 					/* handle corrupt message */
 					printf("%s: datalen error\n", __func__);
 					break;
 				}
+				/* handle message received */
 				memcpy(sdata, imsg.data, sizeof(sdata));
-				printf("%s: received: %s, size %ld\n", __func__,
-								sdata, datalen);
-				/* increase message number */
+				printf("%s: received: %s, size %ld\n", __func__, sdata, datalen);
 				msgnum++;
 				break;
 			}
-
 			imsg_free(&imsg);
 		}
 	}
@@ -114,28 +114,38 @@ parent(struct imsgbuf *ibuf)
 
 
 int
-child(struct imsgbuf *ibuf)
+child(struct imsgbuf *imsgbuf)
 {
 	int	idata;
 	char	sdata[STRING_LENGTH];
 
 	idata = DATA_INT;
-	imsg_compose(ibuf, IMSG_MSG_INT, 0, 0, -1, &idata, sizeof(idata));
-	if (msgbuf_write(&ibuf->w) <= 0 && errno != EAGAIN)
-		return (-1);
-	else
-		printf("%s: sent: %d, size %ld\n", __func__, idata,
-								sizeof(idata));
+	imsg_compose(imsgbuf, IMSG_MSG_INT, 0, 0, -1, &idata, sizeof(idata));
+	if (imsgbuf_write(imsgbuf) == -1) {
+		if (errno == EPIPE) {
+			/* handle closed connection */
+			return (-1);
+		} else {
+			/* handle write failure */
+			return (-1);
+		}
+	}
+	printf("%s: sent: %d, size %ld\n", __func__, idata, sizeof(idata));
 
 	sleep(1);
 
 	snprintf(sdata, sizeof(sdata), "%s", DATA_STRING);
-	imsg_compose(ibuf, IMSG_MSG_STRING, 0, 0, -1, sdata, sizeof(sdata));
-	if (msgbuf_write(&ibuf->w) <= 0 && errno != EAGAIN)
-		return (-1);
-	else
-		printf("%s: sent: %s, size %ld\n", __func__, sdata,
-								sizeof(sdata));
+	imsg_compose(imsgbuf, IMSG_MSG_STRING, 0, 0, -1, sdata, sizeof(sdata));
+	if (imsgbuf_write(imsgbuf) == -1) {
+		if (errno == EPIPE) {
+			/* handle closed connection */
+			return (-1);
+		} else {
+			/* handle write failure */
+			return (-1);
+		}
+	}
+	printf("%s: sent: %s, size %ld\n", __func__, sdata, sizeof(sdata));
 
 	printf("%s: sending done.\n", __func__);
 	return (0);
@@ -155,7 +165,8 @@ int main(void)
 	case 0:
 		/* child */
 		close(imsg_fds[0]);
-		imsg_init(&child_ibuf, imsg_fds[1]);
+		if (imsgbuf_init(&child_ibuf, imsg_fds[1]) == -1)
+			err(1, NULL);
 		if (child(&child_ibuf) == -1) {
 			printf("%s: sending error\n", __func__);
 		}
@@ -164,10 +175,10 @@ int main(void)
 
 	/* parent */
 	close(imsg_fds[1]);
-	imsg_init(&parent_ibuf, imsg_fds[0]);
+	if (imsgbuf_init(&parent_ibuf, imsg_fds[0]) == -1)
+		err(1, NULL);
 	if (parent(&parent_ibuf) == -1) {
 		printf("%s: receiving error\n", __func__);
 	}
 	return (0);
 }
-
