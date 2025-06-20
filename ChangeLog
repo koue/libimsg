@@ -1,3 +1,344 @@
+2025-06-16 13:56  claudio
+
+	* lib/libutil/imsg.c: Set the initial imsg header len to 0 in
+	  imsg_create().
+
+	  The real value is written in imsg_close() but this way no
+	  uninitialized value is added to the imsg.
+
+	  CID 554939 OK tb@
+
+2025-06-13 18:34  schwarze
+
+	* lib/libutil/: ibuf_add.3, imsg_init.3: The mdoc(7) .Ft macro does
+	  not need quoting of its arguments, but about 10% of our manual
+	  pages using this macro employed useless quoting anyway.  Remove
+	  these quotes such that they do not incite fear, uncertainty, and
+	  doubt in developers who happen to look at these pages.  jmc@ and
+	  tb@ agree with the direction.
+
+2025-06-06 22:01  schwarze
+
+	* lib/libutil/: ibuf_add.3, imsg_init.3: .Lb libutil ; OK tedu@
+
+2025-06-05 08:55  tb
+
+	* lib/libutil/imsg.h: Add back #include <sys/types.h> for pid_t
+
+	  This makes imsg.h is self-standing again and unbreaks the build
+	  of audio/amused whose player.c managed to include imsg.h before
+	  pulling in sys/types.h.
+
+	  ok claudio
+
+2025-06-04 09:08  claudio
+
+	* lib/libutil/: imsg.c, imsg.h, imsg_init.3: More imsg function
+	  additions:
+
+	  imsgbuf_get() will replace imsg_get() in the long run. Has much
+	  simpler return value since nobody uses the imsg_get() return
+	  value for anything.
+
+	  imsg_ibufq_push() and imsg_ibufq_pop() allows to push and pop
+	  imsg into an ibufq so they can be processed at a later stage or
+	  from a different task.
+
+	  OK tb@
+
+2025-06-04 09:07  claudio
+
+	* lib/libutil/imsg.c: Kill internal use of imsg_add() and use
+	  ibuf_add() instead.  Also ibuf_free() now preserves the errno so
+	  no need for any extra dance.	OK tb@
+
+2025-06-04 09:06  claudio
+
+	* lib/libutil/imsg-buffer.c: Preserve errno in ibuf_free() so we
+	  don't have to do it in the callers.  OK tb@
+
+2025-06-04 09:06  claudio
+
+	* lib/libutil/imsg-buffer.c: Add a few extra len == 0 checks just
+	  to avoid possible UB via memcpy and memset.  OK tb@
+
+2025-06-04 09:04  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg-buffer.c, imsg.h: Add ibufq API to
+	  support multithreaded use of ibufs
+
+	  ibufq_new() allocates a new struct ibufqueue ibufq_free() flushes
+	  all ibufs and frees the ibufqueue ibufq_push() enqueues an ibuf
+	  onto the queue ibufq_pop() dequeues an ibuf from the queue
+	  ibufq_queuelen() returns the current queue length ibufq_concat()
+	  concatenates all ibufs from the 2nd queue to the end of the
+	  first queue.	msgbuf_concat() enqueue all ibufs from the ibuf
+	  queue into the msgbuf.
+
+	  Adjust the internal msgbuf code to use ibufq as well.  OK tb@
+
+2025-06-04 09:03  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg-buffer.c, imsg.c, imsg.h,
+	  imsg_init.3: Implement following new helper functions:
+
+	  ibuf_add_strbuf, ibuf_get_strbuf functions to insert or parse a
+	  fixed size string buffer. These function ensure that the returned
+	  string is always NUL terminated and return errors (errno
+	  EOVERFLOW) when the string is truncated to fit into the buffer.
+
+	  Two new convenience functions for imsg parsing imsg_get_buf() and
+	  imsg_get_strbuf(). The first simply wraps ibuf_get() and the
+	  latter ibuf_get_strbuf(). imsg_get_buf() is like imsg_get_data()
+	  but does not enforce that all data has to be pulled in one go.
+
+	  Two functions to adjust the max payload of a buffer:
+	  imsg_set_maxsize() and ibuf_set_maxsize().  Align
+	  imsgbuf_set_maxsize() with imsg_set_maxsize() and use the payload
+	  size (excluding the IMSG_HEADER_SIZE).
+
+	  man page updates by tb@ OK tb@
+
+2025-06-04 09:00  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg.h, imsg_init.3: Make imsg.h
+	  freestanding by adding sys/queue.h to imsg.h and use stdint.h and
+	  stddef.h to get types and NULL.  OK tb@
+
+2025-03-05 11:01  tb
+
+	* lib/libutil/ibuf_add.3: Fix prototypes of ibuf_write and
+	  msgbuf_read/write
+
+	  Like for ibuf_read this leaves it implicit that the writev,
+	  recvmsg, and sendmsg are called on that fd, respectively, which
+	  isn't ideal. This will hopefully be improved with manpage changes
+	  that go along with the next iteration of the API.
+
+	  ok claudio
+
+2024-11-29 04:35  tb
+
+	* lib/libutil/imsg.c: Garbage collect the unused imsg_hdr in
+	  imsg_close()
+
+	  ok claudio
+
+2024-11-26 13:57  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg-buffer.c, imsg.c, imsg.h,
+	  imsg_init.3: Adjust the reader callback API to return an ibuf and
+	  to also claim the fd which is passed as argument.
+
+	  This is needed because on Linux the control messages used to pass
+	  fds are not acting as a barrier and ensuring that the fd is
+	  passed with the first byte of the read call. Instead we need to
+	  mark the message that holds to fd and the scan for that message
+	  in the stream.
+
+	  While there also adjust imsgbuf_set_maxsize() to return an int to
+	  indicate an error if the requested size is out of range.
+
+	  Problem reported and fix tested by nicm@ on a linux system.  OK
+	  tb@
+
+2024-11-26 06:12  tb
+
+	* share/mk/bsd.regress.mk: Pass -g to CFLAGS for regression testing
+
+	  It is annoying to have a regress test crash and then be faced
+	  with question marks in the backtrace, and then have to recompile
+	  and pass -g via DEBUG or similar.
+
+	  This may bite people with small obj/. Let's see if anyone shouts.
+
+	  ok anton claudio
+
+2024-11-22 07:20  tb
+
+	* lib/libutil/imsg-buffer.c: Bring the weird msgbuf_free() into a
+	  slightly more usual form
+
+	  ok claudio
+
+2024-11-22 02:11  tb
+
+	* lib/libutil/imsg-buffer.c: Fix NULL deref in msgbuf_free()
+
+	  From Henry Ford
+
+2024-11-21 13:04  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg_init.3: Update ibuf and imsg
+	  manpage to include all new functions.
+
+	  OK tb@
+
+2024-11-21 13:03  claudio
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h: Add ibuf_read and
+	  msgbuf_read to read from a socket and msgbuf_get to return the
+	  ibufs generated by the previous two functions.
+
+	  Error out if the hdrsz argument in msgbuf_new_reader is 0 or too
+	  big.	Also check that the rbuf is allocated in ibuf_read and
+	  msgbuf_read.	If not return EINVAL.
+
+	  Implement the imsg API using these functions and introduce
+	  imsgbuf_set_maxsize() to alter the maximum message size and
+	  imsgbuf_allow_fdpass() to allow fd passing (which is now off by
+	  default).  Also cleanup the internals a bit and make
+	  imsgbuf_init() return int.
+
+	  OK tb@
+
+2024-11-21 13:01  claudio
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h: Make struct msgbuf
+	  opaque. Introduce msgbuf_new() and msgbuf_free() for that.
+
+	  This does not yet fix the imsgbuf_init() function which can now
+	  error.  OK tb@
+
+2024-11-21 13:00  claudio
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h: Remove fd from
+	  struct msgbuf, instead pass the fd to imsg_write and msgbuf_write
+
+	  OK tb@
+
+2024-11-21 12:59  claudio
+
+	* lib/libutil/imsg-buffer.c: Reshuffle code and rename some
+	  internal functions.
+
+	  OK tb@
+
+2024-11-21 12:58  claudio
+
+	* lib/libutil/: imsg-buffer.c, imsg.c, imsg.h: Retire ibuf_add_buf,
+	  replaced by better named ibuf_add_ibuf
+
+	  OK tb@
+
+2024-11-21 12:58  claudio
+
+	* lib/libutil/imsg.c: Only ldapd tried to handle fd exhaustion
+	  during imsg fd passing.
+
+	  Remove the getdtablecount code from imsgbuf_read() and instead
+	  move the getdtablecount code into ldapd.
+
+	  Handle EMSGSIZE (the error returned when there are not enough
+	  free file descriptor slots) inside imsgbuf_read() by retrying the
+	  read to receive the data but without fd.  A caller expecting an
+	  fd should check the return value of imsg_get_fd.
+
+	  OK tb@
+
+2024-11-21 12:54  claudio
+
+	* lib/libutil/: imsg.c, imsg.h, imsg_init.3: Adjust imsgbuf_read to
+	  return an int with either 1, 0 or -1.
+
+	  Handle EAGAIN by a simple return 1 (same for the fd check).  This
+	  way the caller will poll again and then retry later.
+
+	  OK tb@
+
+2024-11-21 12:54  claudio
+
+	* lib/libutil/: imsg.c, imsg.h, imsg_init.3: Introduce
+	  imsgbuf_queuelen() which returns the number of messages ready for
+	  transmission. Returns 0 if nothing is pending.
+
+	  OK tb@
+
+2024-11-21 12:53  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg.c, imsg.h, imsg_init.3: Rename
+	  imsg_init, imsg_clear, imsg_read, imsg_write and imsg_flush to
+	  imsgbuf_init, imsgbuf_clear, imsgbuf_read, imsgbuf_write and
+	  imsgbuf_flush.
+
+	  This separates the imsgbuf API from the per-imsg API.
+
+	  OK tb@
+
+2024-11-21 12:49  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg-buffer.c, imsg.c, imsg_init.3:
+	  Simplify imsg_write, msgbuf_write and ibuf_write return codes.
+
+	  Return 0 on success or when a temporary error happened (EAGAIN,
+	  ENOBUFS).  Return -1 on error and set errno otherwise.  Kill the
+	  old 0 return for EOF. This is not how write operations work.
+
+	  OK tb@
+
+2024-11-21 12:49  claudio
+
+	* lib/libutil/: imsg.c, imsg.h, imsg_init.3: Introduce imsg_write()
+	  and use it instead of msgbuf_write().
+
+	  This is just a thin wrapper around msgbuf_write() but it makes
+	  the API more consistent.
+
+	  OK tb@
+
+2024-11-21 12:48  claudio
+
+	* lib/libutil/imsg.c: imsg_flush() should retry the write on EAGAIN
+	  errors.
+
+	  OK tb@
+
+2024-11-21 12:48  claudio
+
+	* lib/libutil/: imsg.c, imsg_init.3: Refine imsg_forward(), do not
+	  close fd, just don't forward it.
+
+	  imsg_free() will close the unclaimed fds at the end.
+
+	  OK tb@
+
+2024-11-21 12:47  claudio
+
+	* lib/libutil/: imsg.c, imsg.h: Use ibuf_fd_set() and ibuf_fd_get()
+	  to handle the fd passing in imsgs.
+
+	  ibufs already close forgotten fds on free so now imsg_free
+	  behaves the same way.
+
+	  OK tb@
+
+2024-11-21 12:44  claudio
+
+	* lib/libutil/imsg-buffer.c: Allow 0 sized ibuf_open() and mark
+	  stack buffers by setting the fd to -2.
+
+	  For imsgs we want to be able to use ibufs even for empty messages
+	  and stash the fd into those ibufs. For that adjust the ibuf code
+	  to allow that.  This adds an internal IBUF_FD_MARK_ON_STACK
+	  define that is now used for on stack ibufs instead of setting max
+	  to 0.
+
+	  OK tb@
+
+2024-11-21 12:42  claudio
+
+	* lib/libutil/imsg-buffer.c: nline ibuf_realloc() in ibuf_reserve()
+	  it is the only user and the function is simple enough.
+
+	  OK tb@
+
+2024-11-21 12:42  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg-buffer.c, imsg.h: Add
+	  ibuf_get_string() to the ibuf API (used by bgpd and xlockmore)
+
+	  OK tb@
+
 2024-08-26 13:57  claudio
 
 	* lib/libutil/imsg-buffer.c: Replace recallocarray() with a
@@ -9,6 +350,11 @@
 	  recallocarray() call ends up doing a fresh malloc + memcpy +
 	  freezero call.  For sensitive data use ibuf_open() instead of
 	  ibuf_dynamic() to avoid any memory reallocations.  OK tb@
+
+2023-12-29 16:02  claudio
+
+	* regress/lib/libutil/imsg/ibuf_test.c: There is no need to include
+	  sys/uio.h here.
 
 2023-12-29 11:48  claudio
 
@@ -24,8 +370,8 @@
 
 2023-12-12 15:49  claudio
 
-	* lib/libutil/imsg_init.3: Move ibuf API from imsg_init.3 to
-	  ibuf_add.3
+	* lib/libutil/: ibuf_add.3, imsg_init.3: Move ibuf API from
+	  imsg_init.3 to ibuf_add.3
 
 	  Document all new functions added and adjust examples in
 	  imsg_init.3 to follow the new way of handling messages.  OK tb@
@@ -94,6 +440,31 @@
 	* lib/libutil/imsg_init.3: fix two wrong function names in the
 	  description; from <Lucas at sexy dot is>
 
+2023-09-24 08:28  tb
+
+	* share/mk/bsd.regress.mk: Make REGRESS_LOG more useful again
+
+	  Enabling REGRESS_FAIL_EARLY made REGRESS_LOG error out at the
+	  first error, which is pointless. So default to no if REGRESS_LOG
+	  is set unless the user explicitly enabled it.
+
+	  Requested by claudio ok bluhm
+
+2023-09-15 07:13  tb
+
+	* share/mk/bsd.regress.mk: Default REGRESS_FAIL_EARLY to yes
+
+	  The current fail open behavior may be desirable in some
+	  circumstances, but it is an unexpected and dangerous default
+	  since one expects some kind of feedback when running a test
+	  suite. Currently failing tests are only visible on inspecting the
+	  log, which led to unsuspecting people missing failures several
+	  times in the past. Flip the default to fail closed. For those
+	  that want to have the old behavior, it is easy enough to set the
+	  variable to no.
+
+	  Positive feedback job and schwarze ok kn
+
 2023-06-20 06:53  jsg
 
 	* lib/libutil/imsg_init.3: responsibilty -> responsibility
@@ -102,6 +473,12 @@
 
 	* lib/libutil/imsg_init.3: - filedescriptor -> file descriptor, as
 	  per the rest of the page - missing full stop
+
+2023-06-19 17:22  claudio
+
+	* regress/lib/libutil/imsg/ibuf_test.c: Drop test for
+	  msgbuf_drain() since that function is no longer part of the
+	  public API.
 
 2023-06-19 17:19  claudio
 
@@ -126,6 +503,14 @@
 	  Remove ibuf_data() in iked since the same function is now
 	  provided by libutil.	OK tb@
 
+2023-06-13 10:39  tb
+
+	* regress/lib/libutil/imsg/ibuf_test.c: Some KNF nits
+
+2023-06-13 10:38  tb
+
+	* regress/lib/libutil/imsg/Makefile: imsg test: simplify Makefile
+
 2023-05-23 12:41  claudio
 
 	* lib/libutil/imsg-buffer.c: Avoid calling malloc with a zero
@@ -143,11 +528,30 @@
 
 	  OK tb@
 
+2023-05-23 09:32  claudio
+
+	* regress/lib/libutil/imsg/ibuf_test.c: Don't use ibuf_open(0) as
+	  test. 0 lenght ibufs make little sense and result in a malloc(0)
+	  call which is no bueno. Use ibuf_open(1) instead.  OK miod@
+
 2023-03-08 04:43  guenther
 
 	* lib/libutil/imsg.c: Delete obsolete /* ARGSUSED */ lint comments.
 
 	  ok miod@ millert@
+
+2022-12-09 09:30  tb
+
+	* share/mk/bsd.regress.mk: Allow overriding default run-regress-*
+	  targets
+
+	  Overriding a default run-regress-* target with custom commands is
+	  already possible and done by many tests. The fact that it
+	  currently works depends on behavior in the BUGs section of
+	  make.1, however. The fix is not to add commands if the target is
+	  already defined with commands.
+
+	  tested by anton correct fix from espie, ok anton
 
 2022-05-19 08:05  stsp
 
@@ -158,8 +562,9 @@
 
 2022-04-23 08:57  tobias
 
-	* lib/libutil/imsg-buffer.c: Verify sizes before arithmetic
-	  operations
+	* lib/libutil/imsg-buffer.c, regress/lib/libutil/imsg/Makefile,
+	  regress/lib/libutil/imsg/ibuf_test.c: Verify sizes before
+	  arithmetic operations
 
 	  Unsigned overflows are not a bug in C but we have to make sure
 	  that requested buffer sizes will be actually available.
@@ -175,6 +580,12 @@
 	  is 0.  Reported by fouzhe on openbgpd-portable github page.  OK
 	  tb@
 
+2021-08-31 23:33  bluhm
+
+	* share/mk/bsd.regress.mk: Make include bsd.prog.mk is supporting
+	  PROGS for a while.  Allow multiple programs also in
+	  bsd.regress.mk for consistency.  OK anton@
+
 2021-03-31 17:42  eric
 
 	* lib/libutil/imsg-buffer.c: change the barrier so that fd's are
@@ -188,9 +599,53 @@
 	* lib/libutil/imsg.h: Make imsg.h a bit more self-contained by
 	  prototyping struct iovec.  OK martijn@ mvs@ deraadt@
 
+2020-12-17 14:54  bluhm
+
+	* share/mk/bsd.regress.mk: Run setup_once targets in a sepearate
+	  block with headline before all other targets.  OK tb@
+
+2020-12-16 16:53  bluhm
+
+	* share/mk/bsd.regress.mk: When debugging tests, it is useful to
+	  see the target name and which output belongs to it.  Echo
+	  headline with regress target and empty line afterwards.  OK
+	  sthen@ tb@ OK claudio@
+
 2020-12-15 13:40  jmc
 
 	* lib/libutil/imsg_init.3: typo fix from aisha tammy; ok nicm
+
+2019-06-17 17:20  espie
+
+	* share/mk/bsd.regress.mk: add REGRESS_EXPECTED_FAILURES variable,
+	  for those tests that are expected to fail because they're not yet
+	  implemented.
+
+	  okay bluhm@
+
+2019-06-15 07:30  espie
+
+	* share/mk/bsd.regress.mk: simplify cleanup handling okay bluhm@
+
+2019-06-11 18:14  espie
+
+	* share/mk/bsd.regress.mk: make things slightly less insane: -
+	  actually use the ERRORS framework for REGRESS_LOG - put it at end
+	  of file, as best working (years of practice on bsd.port.mk) -
+	  actually use .SILENT - fix REGRESS_IGNORE_FAIL. Don't put a - in
+	  front of lines, but just don't error out as false on FAILED
+	  tests.  This finally allows ^C to actually interrupt a testsuite.
+	   - add one missing .PHONY (quite a few more for later)
+
+	  okay bluhm@
+
+2019-05-14 16:43  bluhm
+
+	* share/mk/bsd.regress.mk: Remove the REGRESS_MAXTIME feature from
+	  regress framework.  The timeout based on CPU seconds is pretty
+	  useless, most hanging tests sleep and do not spin.  The timeout
+	  could not be distinguished from failure.  Only 3 tests used it.
+	  OK anton@ schwarze@ cheloha@ otto@
 
 2019-01-20 02:50  bcook
 
@@ -198,6 +653,22 @@
 	  header definitions to use standard types.
 
 	  ok deraadt@ claudio@
+
+2018-12-03 22:30  bluhm
+
+	* share/mk/bsd.regress.mk: If a regress uses REGRESS_SKIP_TARGETS
+	  to skip part of its tests, print SKIPPED.  This helps to detect
+	  such incomplete tests.  OK anton@
+
+2018-10-05 11:15  bluhm
+
+	* share/mk/bsd.regress.mk: Add regress variable to run setup once
+	  for all tests.  OK anton@ benno@
+
+2018-09-26 09:34  bluhm
+
+	* share/mk/bsd.regress.mk: Add variables for setup and cleanup of
+	  regression tests.  OK anton@ jca@ tb@ benno@
 
 2018-09-26 09:22  jmc
 
@@ -208,6 +679,11 @@
 
 	* lib/libutil/imsg_init.3: Fix function argument names, from Abel
 	  Abraham Camarillo Ojeda via jmc@.
+
+2018-01-15 20:38  bluhm
+
+	* share/mk/bsd.regress.mk: We have no deprecated regress variables
+	  in our tree.	Remove the compatibility layer.
 
 2017-12-14 09:27  kettenis
 
@@ -342,6 +818,12 @@
 
 	  ok phessler, claudio, reyk
 
+2014-07-19 18:15  miod
+
+	* share/mk/bsd.regress.mk: Explicitely check the value of
+	  REGRESS_SKIP_SLOW rather than its emptyness, for it defaults to a
+	  non-empty value; Doug Hogan
+
 2014-06-30 00:26  deraadt
 
 	* lib/libutil/imsg.c: sys/types.h rather than sys/param.h, where
@@ -374,6 +856,18 @@
 	  wrong for sure."
 
 	  ok gilles
+
+2013-08-01 20:43  kettenis
+
+	* share/mk/bsd.regress.mk: Don't error out if there are no
+	  regression for a particular architecture in a subdirectory.
+
+2013-06-14 22:38  halex
+
+	* share/mk/bsd.regress.mk: introduce REGRESS_FAIL_EARLY to stop
+	  regression tests at first encountered failure
+
+	  ok phessler@ bluhm@
 
 2013-06-05 03:40  tedu
 
@@ -462,4 +956,73 @@
 	  people.
 
 	  "you should just commit" deraadt
+
+2002-09-02 19:56  avsm
+
+	* share/mk/bsd.regress.mk: - Precede internal bsd.regress.mk
+	  variables with a _ - Rename old variables to be easier to read,
+	  and deprecate old variables.	The old variables will still work,
+	  but emit warnings.  - REGRESS_SKIP_SLOW only needs to be
+	  non-empty now, not explicitly set to 'yes' - REGRESS_LOG can
+	  contain more than one file to append results to - ERRORS variable
+	  can be set in Makefile to emit warnings or indicate fatal errors.
+	   - Add REGRESS_MAIL variable which can be set to an email address
+	  to send results to.  Currently this only works for a full
+	  regression run, since art doesnt want partial run results - sync
+	  bsd.regress.mk(5) with these changes
+
+	  ok art@ , also looked over by miod@
+
+2002-02-17 01:10  marc
+
+	* share/mk/bsd.regress.mk: skip tests that require root
+	  (REGRESSROOTTARGETS) unless the user is root or SUDO is not
+	  empty.  OK art@
+
+2002-01-03 16:54  brad
+
+	* share/mk/bsd.regress.mk: use :L variable modifier
+
+2002-01-03 02:20  art
+
+	* share/mk/bsd.regress.mk: make regress the main target (now that
+	  dependencies are correct)
+
+2002-01-03 01:47  art
+
+	* share/mk/bsd.regress.mk: OpenBSD tag
+
+2002-01-03 01:46  art
+
+	* share/mk/bsd.regress.mk: s/timeout/possible timeout/ the test
+	  could simply fail.
+
+2002-01-03 01:01  art
+
+	* share/mk/bsd.regress.mk: Two new variables.	REGRESSSLOWTARGETS,
+	  contains a list of all regress targets that are slow.
+	  REGRESSSKIPSLOW, settable to "yes"/"no" (default is "no") when
+	  running    regress. Skips slow tests.
+
+	  (*for some arbitrary and very subjective value of "slow")
+
+2002-01-03 00:28  art
+
+	* share/mk/bsd.regress.mk: Support for a new variable
+	  REGRESSMAXTIME that sets the cpu time ulimit for tests. Needed
+	  for libc_r tests.  With some help from marc@
+
+2002-01-02 03:27  art
+
+	* share/mk/bsd.regress.mk: Eh? Why could I finish a make build with
+	  this 6 hours ago?
+
+2002-01-01 22:54  art
+
+	* share/mk/bsd.regress.mk: Start for a framework for regression
+	  tests. Simplifies the most common regress test targets, provides
+	  logging of success/failure and various minor features.
+
+	  Much Makefile magic from espie@ who thinks that my shell
+	  programming skills are "atrocious" (and I agree).
 
