@@ -5,7 +5,7 @@ processes using sockets. Each transmitted message is guaranteed to be presented
 to the receiving program whole. They are commonly used in privilege separated
 processes, where processes with different rights are required to cooperate.
 
-http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/lib/libutil/
+http://cvsweb.openbsd.org/src/lib/libutil/
 
 ## Installation
 
