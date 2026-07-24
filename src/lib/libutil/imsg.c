@@ -418,11 +418,6 @@ imsg_close(struct imsgbuf *imsgbuf, struct ibuf *msg)
 void
 imsg_free(struct imsg *imsg)
 {
-#ifdef __OpenBSD__
-	freezero(imsg->data, imsg->hdr.len - IMSG_HEADER_SIZE);
-#else
-	free(imsg->data);
-#endif
 	ibuf_free(imsg->buf);
 }
 
