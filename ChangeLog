@@ -1,3 +1,33 @@
+2026-07-23 14:13  tb
+
+	* lib/libutil/imsg_init.3: imsg_init.3: mark imsg_get as
+	  intentionally undocumented
+
+	  noticed by chohag at jtan.com ok claudio
+
+2026-05-12 16:01  claudio
+
+	* lib/libutil/imsg-buffer.c: ibuf_set_maxsize() need to ensure that
+	  the invariants are upheld by checking also that wpos and size are
+	  not bigger then the new max.
+
+	  If wpos is bigger fail hard, for size the allocation may have
+	  been used before and so do an explicit_bzero() to clear the extra
+	  memory out.
+
+	  OK tb@
+
+2026-03-02 20:07  claudio
+
+	* lib/libutil/imsg.c: While in practice the ibuf_skip() call can
+	  not fail it is better to check it. If the ibuf header can't be
+	  skipped it is better to not forward the message and return an
+	  error.  Fix for CID 492354 OK tb@
+
+2025-08-25 08:29  claudio
+
+	* lib/libutil/imsg-buffer.c: Remove unused variable.  OK tb@
+
 2025-06-16 13:56  claudio
 
 	* lib/libutil/imsg.c: Set the initial imsg header len to 0 in
