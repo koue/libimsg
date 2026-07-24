@@ -10,7 +10,3 @@ http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/lib/libutil/
 ## Installation
 
 `make && make install`
-
-## Usage
-
-`cd test/ && make && make test`
