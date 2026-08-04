@@ -1,3 +1,39 @@
+2026-07-30 17:55  claudio
+
+	* lib/libutil/imsg-buffer.c: Fix typo noticed by dv@
+
+2026-07-30 11:51  claudio
+
+	* lib/libutil/imsg-buffer.c: let's fix some lets OK tb@
+
+2026-07-30 11:49  claudio
+
+	* lib/libutil/imsg-buffer.c: Correct EMSGSIZE handling in
+	  msgbuf_read to retry without control message
+
+	  In msgbuf_read() the EMSGSIZE handling needs to retry without the
+	  control buffer so that the message is read without the fd and
+	  forcing the kernel to close the buffer). Else the call will fail
+	  immediatly again and the system will busy loop.
+
+	  OK tb@
+
+2026-07-30 11:46  claudio
+
+	* lib/libutil/imsg-buffer.c: Change overflow check in
+	  ibuf_get_strbuf
+
+	  ibuf_get_strbuf is too picky about the terminating NUL byte.	If
+	  the sender did not use ibuf_add_strbuf() then the buffer may not
+	  be padded with 0 at the end. This triggers the EOVERFLOW case
+	  even though the string is probably short enough.
+
+	  Make ibuf_get_strbuf more robust by checking the string length.
+	  If the string is shorter than the buffer pad the rest with 0. On
+	  overflow force a '\0' byte at the end and return EOVERFLOW.
+
+	  OK tb@
+
 2026-07-23 14:13  tb
 
 	* lib/libutil/imsg_init.3: imsg_init.3: mark imsg_get as
