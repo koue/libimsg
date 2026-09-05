@@ -1,3 +1,26 @@
+2026-09-04 18:47  claudio
+
+	* lib/libutil/: ibuf_add.3, imsg-buffer.c, imsg.c, imsg.h,
+	  imsg_init.3: Remove imsg_get() and imsg_compose_ibuf() from the
+	  imsg API.
+
+	  While doing so add the following functions: - imsg_add_strbuf   a
+	  wrapper for ibuf_add_strbuf similar to imsg_add it uses the
+	  imsg namespace. It feels more natural to use imsg_add and
+	  imsg_add_strbuf to construct messages (mixing imsg_add and
+	  ibuf_add_xyz	 seems strange).
+
+	  - imsgbuf_get_userdata & imsgbuf_set_userdata -
+	  imsgbuf_set_close_callback   These three functions are used to
+	  replace the bad imsgev wrappers in   various deamons. It actually
+	  allows one to use the imsg API directly   in libevent code.
+
+	  - msgbuf_readlen   return how many messages are ready to be
+	  processed on a msgbuf.    This can be used to implement a back
+	  pressure mechanism for individual    msgbuf sockets.
+
+	  OK tb@
+
 2026-07-30 17:55  claudio
 
 	* lib/libutil/imsg-buffer.c: Fix typo noticed by dv@
